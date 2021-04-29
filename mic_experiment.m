@@ -1,3 +1,4 @@
+clc
 close all
 clear classes
 
@@ -9,7 +10,7 @@ fprintf("python script version -> %s\n", string(py.audio_capture.version()));
 %% Global setup
 
 do_plotting = true;
-monitored_freqs = 200;
+monitored_freqs = [200,300];
 num_runs = 12;
 mic_no = 23;
 sec_recording = 1;
@@ -30,12 +31,10 @@ while true
     answer = input(prompt, 's');
     if answer == 'y'
         [filenames, path]=uigetfile('*.wav','Select the INPUT DATA FILE(s)','MultiSelect','on');
-        if filenames ~= 0
-            filenames=string(filenames);
-        else
-            fprintf('No files selected, ending the script\n');
-            return
+        if isfloat(filenames)
+            error('No files selected')
         end
+        filenames = strcat(path, string(filenames));
         break
     elseif answer == 'n'
         filenames = record_run(num_runs);
@@ -46,35 +45,24 @@ while true
 end
 
 %% Process
-fft_all_runs = zeros(fft_dim, num_runs);
-for index = 1:num_runs
-    [freq, audio_fft] = process_audio(filenames(index), channel_select, fft_dim);
-    if channel_select == 0
-        fft_all_runs(index) = audio_fft;
-    else
-        fft_all_runs(:, index) = audio_fft;
-    end    
-end 
-
-if is_freq_monitored
-    data_stats = analyse_data(fft_all_runs, freq, monitored_freqs, channels);
-end
+fft_all_runs = process_audio(filenames, channels, fft_dim);
+% Analyse
+data_stats = analyse_data(fft_all_runs, monitored_freqs, channels);
 
 %% Plot all
 % Uncomment if you want to plot
 if do_plotting
-    for index = 1:length(channels)
-        if channels == 2
-            plot_data = fft_all_runs(:, channel:2:end);
-        else
-            plot_data = fft_all_runs;
-        end
+    % Extract frequencies from the matrix for x axis of plot
+    freq = fft_all_runs(:, 1)';
+    for channel = 1:length(channels)
+        plot_data = fft_all_runs(:, 1+channels(channel):2:end);
         figure
         tiledlayout(4,3)
-        for index = 1:num_runs
+        for index = 1:length(filenames)
             nexttile
-            plot(freq, abs(plot_data(:, index)));
-            title('FFT channel %d', index);
+            
+            plot(freq, plot_data(:, index));
+            title('FFT channel', index);
             xlabel('Frequency(Hz)');
             ylabel('Amplitude');
         end
@@ -82,22 +70,34 @@ if do_plotting
 end
 
 %% Archive the run
-
-archive_dir_name="rec/test" + datestr(now,'_yyyymmdd_HHMM') + "_mic_" + mic_no;
-mkdir(archive_dir_name);
-% make filename for excel file
-file_save="test_" + string(monitored_freqs) + datestr(now,'_yy-mm-dd_HH-MM-SS') + ".xls";
-% write all recorded ffts to excel and move to rec folder
-writematrix(abs(fft_all_runs), file_save);
-movefile(file_save, archive_dir_name);
-% write processed data to excel and move to rec folder
-data_save = replace(file_save, "test_", "data_");
-writetable(struct2table(data_stats), data_save);
-movefile(data_save, archive_dir_name);
-% move all audio files to rec folder
-for index = 1:num_runs
-    movefile(filenames(index), archive_dir_name)
+prompt = 'Do you want to save results (y/n)? ';
+while true
+    answer = input(prompt, 's');
+    if answer == 'y'
+        archive_dir_name="rec/test" + datestr(now,'_yyyymmdd_HHMM') + "_mic_" + mic_no;
+        mkdir(archive_dir_name);
+        % make filename for excel file
+        file_save="test_" + string(monitored_freqs) + datestr(now,'_yy-mm-dd_HH-MM-SS') + ".xls";
+        % write all recorded ffts to excel and move to rec folder
+        writematrix(abs(fft_all_runs), file_save);
+        movefile(file_save, archive_dir_name);
+        % write processed data to excel and move to rec folder
+        data_save = replace(file_save, "test_", "data_");
+        writetable(struct2table(data_stats), data_save);
+        movefile(data_save, archive_dir_name);
+        % move all audio files to rec folder
+        for index = 1:num_runs
+            movefile(filenames(index), archive_dir_name)
+        end
+        break
+    elseif answer == 'n'
+        filenames = record_run(num_runs);
+        break
+    else
+        prompt = 'Wrong answer, y or n: ';
+    end   
 end
+
 fprintf("end of script\n");
 
 
