@@ -1,7 +1,6 @@
 %% Analysis
 
 function [out] = analyse_data(input_data, freqs_to_analyse, channels)
-%     data_stats = analyse_data(fft_all_runs, find(freq==test_freq), channels);
     fprintf("Analysing data.....");
     % Extract the first column that contains frequencies 
     frequencies = input_data(:,1);
@@ -21,12 +20,19 @@ function [out] = analyse_data(input_data, freqs_to_analyse, channels)
             data = input_data(:, channel:2:end);
         end
         for index = 1:length(test_indices)
-            values = datastats(data(test_indices(index), :)');
+            data_slice = data(test_indices(index), :);
+            clear values
             values.freq = freqs_to_analyse(index);
             values.channel = channels(channel);
+            values.data = data_slice;
+            values = catstruct(values, datastats(data_slice'));
             out(struct_idx) = values;
             struct_idx = struct_idx + 1;
         end
     end
+    if ~exist('out','var')
+        disp('nema out???')
+    end
+    
     fprintf("DONE\n");
 end 

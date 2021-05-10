@@ -19,7 +19,7 @@ end
 function [out] = calc_fft_audio_single(audio_file, channels, fft_dimension)
     [audio_raw, audio_sample_freq] = audioread(audio_file);
     % Remove frequencies lower than 10Hz
-    audio_raw = highpass(audio_raw, 10, audio_sample_freq);
+%     audio_raw = highpass(audio_raw, 10, audio_sample_freq);
     if ~exist('fft_dimension','var')
         % third parameter does not exist, so default it to something
         fft_dimension = length(audio_file);

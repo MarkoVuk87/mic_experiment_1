@@ -1,12 +1,16 @@
-function [audio_filename] = record_audio(seconds)
-    close all
-    clear classes
+function [list_of_filenames] = record_audio(num_attempts, seconds)
+    index = num_attempts;
+    while index > 0
+        fprintf("Attempt %i of %i: ", num_attempts+1-index, num_attempts);
+        audio_file = record_audio_single(seconds);
+        if audio_file ~= "error"
+            list_of_filenames(:,index)=audio_file;
+            index = index-1;
+        end
+    end
+end
 
-    % Reloading the python module
-    audio_capture = py.importlib.import_module('audio_capture');
-    py.importlib.reload(audio_capture);
-    fprintf("python script version -> %s\n", string(py.audio_capture.version()));
-
+function [audio_filename] = record_audio_single(seconds)
     fprintf("Start recording......")
     try
         res_py = py.audio_capture.record(seconds);
