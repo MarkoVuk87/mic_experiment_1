@@ -5,11 +5,12 @@ insomnia('on','verbose');
 %% Global setup
 channel = ["outer" "right"; "inner"  "left"];
 
-descriptor.length_outer = 50;
+descriptor.length_outer = 41;
 descriptor.length_inner = 10;
 
-test_freqs = [0, 150, 250, 300, 500];
-descriptor.sec_recording = 3;
+% test_freqs = [0, 150, 250, 300, 500];
+test_freqs = [90, 100, 110];
+descriptor.sec_recording = 1;
 descriptor.num_runs = 10;
 descriptor.mic_no = 13;
 descriptor.channels = [1, 2];
@@ -39,8 +40,18 @@ for id = 1:length(dFF)
         
         sound_ex.setup(descriptor.freq_inner, descriptor.freq_outer);
         sound_ex.play();
-        filenames_run = record_audio(descriptor.num_runs, descriptor.sec_recording);
+        pause('on');
+        pause(5);
+        try
+            filenames_run = record_audio(descriptor.num_runs, descriptor.sec_recording);
+        catch
+            warning('Something is wrong with recording audio');
+            sound_ex.stop();
+            return
+        end
         sound_ex.stop();
+        pause('off');
+
 
         %% Process
         clear fft_one_run
@@ -53,10 +64,10 @@ for id = 1:length(dFF)
             temp.run_id = id;
             temp = catstruct(descriptor, temp);
             temp.channel_name = channel(data_stats(index).channel, 1);
-            all_data(index_store) = catstruct(data_stats(index), temp);
+            processed_data(index_store) = catstruct(data_stats(index), temp);
             index_store = index_store + 1;
         end
-        fft_all_runs = [fft_one_run, fft_one_run];
+        raw_data = [fft_one_run, fft_one_run];
         filenames = [filenames, filenames_run];
     end
 end
@@ -66,27 +77,29 @@ prompt = 'Do you want to save results (y/n)? ';
 while true
     answer = input(prompt, 's');
     if answer == 'y'
-        archive_dir_name="rec/test" + datestr(now,'_yyyymmdd_HHMM') + "_mic_" + descriptor.mic_no;
+        archive_dir_name="rec/test" + datestr(now,'_yyyymmdd_HHMM');
         mkdir(archive_dir_name);
         % make filename for excel file
         file_save="test_" + datestr(now,'_yy-mm-dd_HH-MM-SS') + ".xls";
         % write all recorded ffts to excel and move to rec folder
-        writematrix(fft_all_runs, file_save);
+        writematrix(raw_data, file_save);
         movefile(file_save, archive_dir_name);
         % write processed data to excel and move to rec folder
         data_save = replace(file_save, "test_", "data_");
-        writetable(struct2table(all_data), data_save);
+        writetable(struct2table(processed_data), data_save);
         movefile(data_save, archive_dir_name);
         % move all audio files to rec folder
-        for index = 1:length(filenames)
-            movefile(filenames(index), archive_dir_name)
-        end
+        zip(archive_dir_name + '/recordings.zip', filenames);
         break
     elseif answer == 'n'
         break
     else
         prompt = 'Wrong answer, y or n: ';
     end   
+end
+% Clean up
+for index = 1:length(filenames)
+    delete (filenames(index))
 end
 insomnia('off','verbose'); 
 fprintf("end of script\n");
