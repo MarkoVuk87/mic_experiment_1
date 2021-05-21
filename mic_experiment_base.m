@@ -4,10 +4,10 @@ clear classes
 
 insomnia('on','verbose'); 
 %% Global setup
-channel = ["inner"  "left"; "outer" "right"];
+channel = ["signal"  "left"; "noise" "right"];
 
-descriptor.length_outer = 50;
-descriptor.length_inner = 10;
+descriptor.length_noise = 50;
+descriptor.length_signal = 10;
 
 % test_freqs = [100, 150];
 % for index = 3:12
@@ -26,17 +26,17 @@ filenames = [];
 
 for id = 1:length(test_freqs)
     % Perform run
-    descriptor.freq_inner = 0;
-    descriptor.freq_outer = test_freqs(id);
-    fprintf("Start of the baseline run %d (%d/%d)\n", descriptor.freq_outer, id, length(test_freqs));
-    monitored_freqs = [descriptor.freq_outer];
+    descriptor.freq_signal = 0;
+    descriptor.freq_noise = test_freqs(id);
+    fprintf("Start of the baseline run %d (%d/%d)\n", descriptor.freq_noise, id, length(test_freqs));
+    monitored_freqs = [descriptor.freq_noise];
     
     % Reloading the python module
     audio_capture = py.importlib.import_module('audio_capture');
     py.importlib.reload(audio_capture);
     fprintf("python script version -> %s\n", string(py.audio_capture.version()));
 
-    sound_ex = SoundHelper(descriptor.freq_inner, descriptor.freq_outer);
+    sound_ex = SoundHelper(descriptor.freq_signal, descriptor.freq_noise);
     sound_ex.play();
     pause('on');
     pause(5);

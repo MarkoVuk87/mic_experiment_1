@@ -11,10 +11,10 @@ receiving = True
 is_connected = False
 
 audio = wav_writer.WavWriter()
-audio.set_attributes(4000, 2, 2)
+audio.set_attributes(16000, 2, 2)
 
 def version():
-    return '3.' + str(audio.version())
+    return '4.' + str(audio.version())
 
 def cb_save_audio_file(client, userdata, message):
     if not audio.is_finished():

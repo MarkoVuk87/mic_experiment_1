@@ -2,9 +2,9 @@ clc
 clear all
 close all
 % Please import data as table with the title "data"
-% folder = 'rec/**/';
-folder = 'test_dir/';
-files = dir(strcat(folder, 'data*.xls'));
+folder = 'rec/**/';
+% folder = 'test_dir/';
+files = dir(strcat(folder, 'data*05-18*.xls'));
 
 data = merge_all_files(files);
 
@@ -110,7 +110,7 @@ function [] = show_data(data, details)
     %         end
         end
         if size(plot_aux) ~= 0
-            s1 = scatter(plot_aux(:,1), plot_aux(:,2), 'filled', 'MarkerFaceColor', color, 'DisplayName',string(freqs(fqidx)));
+            s = scatter(plot_aux(:,1), plot_aux(:,2), 'filled', 'MarkerFaceColor', color, 'DisplayName',string(freqs(fqidx)));
         end
         cnt = 1 + cnt;
     end
